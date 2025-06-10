@@ -2,7 +2,8 @@ name: Build and Push to ECR
 
 on:
   push:
-    branches: [github_actions]
+    branches: [master]
+  workflow_dispatch: # Allows to run manually
 
 permissions:
   contents: read
