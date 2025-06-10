@@ -2,17 +2,11 @@ from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel
 from typing import List, Optional
 import boto3
-import os
 
 app = FastAPI()
 
 # DynamoDB client
-dynamodb = boto3.resource(
-    'dynamodb',
-    region_name=os.getenv("AWS_REGION", "us-east-1"),
-    aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
-    aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY")
-)
+dynamodb = boto3.resource('dynamodb')
 
 boards_table = dynamodb.Table("boards")
 tasks_table = dynamodb.Table("tasks")
