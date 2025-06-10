@@ -12,6 +12,7 @@ env:
   AWS_REGION: us-east-2
   ECR_REPOSITORY: formacion3junio/r2
   IMAGE_TAG: latest
+  S3_BUCKET: formacion3junio-r2
 
 jobs:
   build-and-push:
@@ -38,3 +39,18 @@ jobs:
       run: |
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG backend
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'yarn'
+        cache-dependency-path: frontend/yarn.lock
+
+    - name: Build frontend statics and push to S3
+      run: |
+        cd frontend
+        yarn install --frozen-lockfile
+        yarn build
+        aws s3 sync build/ s3://${{ env.S3_BUCKET }}/ --delete
+        aws s3 cp s3://${{ env.S3_BUCKET }}/index.html s3://${{ env.S3_BUCKET }}/index.html --metadata-directive REPLACE --cache-control "no-cache"
