@@ -76,7 +76,7 @@ def update_task(task_id: int, task_update: TaskUpdate):
     return response["Attributes"]
 
 @app.get("/tasks", response_model=List[Task])
-def get_tasks(boardId: str = Query(...)):
+def get_tasks(boardId: int = Query(...)):
     response = tasks_table.query(
         IndexName="boardId-index",  # Asegúrate de tener este GSI
         KeyConditionExpression=boto3.dynamodb.conditions.Key("boardId").eq(boardId)
