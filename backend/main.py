@@ -76,11 +76,15 @@ def update_task(task_id: int, task_update: TaskUpdate):
     return response["Attributes"]
 
 @app.get("/tasks", response_model=List[Task])
-def get_tasks(boardId: int = Query(...)):
-    response = tasks_table.query(
-        IndexName="boardId-index",  # Asegúrate de tener este GSI
-        KeyConditionExpression=boto3.dynamodb.conditions.Key("boardId").eq(boardId)
-    )
+def get_tasks(boardId: Optional[int] = Query(None)):
+    if boardId is not None:
+        response = tasks_table.query(
+            IndexName="boardId-index",
+            KeyConditionExpression=boto3.dynamodb.conditions.Key("boardId").eq(boardId)
+        )
+    else:
+        response = tasks_table.scan()  # trae todas las tareas (peligro con tablas grandes)
+
     return response.get("Items", [])
 
 if __name__ == "__main__":
