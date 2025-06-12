@@ -1,7 +1,8 @@
 from fastapi import FastAPI, HTTPException, Query, Response, status
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Dict
 import boto3
+import uvicorn
 
 app = FastAPI()
 
@@ -45,21 +46,28 @@ def create_task(task: Task):
     return task
 
 @app.put("/tasks/{task_id}", response_model=Task)
-def update_task(task_id: str, task_update: TaskUpdate):
+def update_task(task_id: int, task_update: TaskUpdate):
     update_expression = []
-    expression_values = {}
+    expression_values: Dict[str, any] = {}
+    expression_names: Dict[str, str] = {}
+
     for field, value in task_update.dict(exclude_unset=True).items():
-        update_expression.append(f"{field} = :{field}")
-        expression_values[f":{field}"] = value
+        placeholder_name = f"#{field}"   # e.g. "#status"
+        placeholder_value = f":{field}"  # e.g. ":status"
+
+        update_expression.append(f"{placeholder_name} = {placeholder_value}")
+        expression_values[placeholder_value] = value
+        expression_names[placeholder_name] = field
 
     if not update_expression:
         raise HTTPException(status_code=400, detail="No fields to update")
 
     try:
         response = tasks_table.update_item(
-            Key={"taskId": task_id},
+            Key={"id": task_id},
             UpdateExpression="SET " + ", ".join(update_expression),
             ExpressionAttributeValues=expression_values,
+            ExpressionAttributeNames=expression_names,
             ReturnValues="ALL_NEW"
         )
     except tasks_table.meta.client.exceptions.ConditionalCheckFailedException:
@@ -74,3 +82,6 @@ def get_tasks(boardId: str = Query(...)):
         KeyConditionExpression=boto3.dynamodb.conditions.Key("boardId").eq(boardId)
     )
     return response.get("Items", [])
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="127.0.0.1", port=8000)
