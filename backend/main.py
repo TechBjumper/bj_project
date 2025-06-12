@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Response, status
 from pydantic import BaseModel
 from typing import List, Optional
 import boto3
@@ -29,6 +29,10 @@ class TaskUpdate(BaseModel):
     description: Optional[str] = None
     status: Optional[str] = None
 
+
+@app.get("/")
+def root():
+    return Response(status_code=status.HTTP_200_OK)
 
 @app.get("/boards", response_model=List[Board])
 def get_boards():
